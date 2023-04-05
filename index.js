@@ -88,7 +88,7 @@ async function checkActivities() {
 }
 
 const CHECK_INTERVAL = 60 * 60 * 1000; // Check every hour
-setIntervalAsync(checkActivities, 100000);
+setIntervalAsync(checkActivities, CHECK_INTERVAL);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
