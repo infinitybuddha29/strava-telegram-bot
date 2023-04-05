@@ -9,13 +9,12 @@ require('dotenv').config();
 const TELEGRAM_API_TOKEN = process.env.TELEGRAM_API_TOKEN;
 const STRAVA_CLIENT_ID = process.env.STRAVA_CLIENT_ID;
 const STRAVA_CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET;
-const OAUTH_REDIRECT_URI = process.env.OAUTH_REDIRECT_URI;
+const OAUTH_REDIRECT_URI = process.env.NODE_ENV === 'production' ? process.env.PROD_OAUTH_REDIRECT_URI : process.env.LOCAL_OAUTH_REDIRECT_URI ;
 
 const bot = new Telegraf(TELEGRAM_API_TOKEN);
 
 bot.start(async (ctx) => {
     const chatId = ctx.message.chat.id;
-    console.log({chatId, STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET})
     const authUrl = `https://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(OAUTH_REDIRECT_URI)}&approval_prompt=force&scope=activity:read_all&state=${chatId}`
 
     await ctx.reply(
