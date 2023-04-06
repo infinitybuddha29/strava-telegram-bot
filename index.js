@@ -19,6 +19,7 @@ bot.start(async (ctx) => {
 
 // Отправка ссылки для регистрации пользователя или в случае если такой пользователь уже зареган, отправка сообщения об этом.
 bot.command('register', async (ctx) => {
+    await ctx.reply(`Считаем считаем...`);
     const userId = ctx.message.from.id;
     const username = ctx.message.from.username;
     const stateEncoded = encodeURIComponent(JSON.stringify({ userId, username}));

@@ -32,9 +32,7 @@ async function checkIfUserExists(userId) {
             .from('users')
             .select('*')
             .eq('id', userId)
-            .single();
-
-        console.log(error, existingUser);
+            .maybeSingle();
 
         if (error) {
             console.log('Error checking for existing user:', error);
