@@ -18,7 +18,7 @@ function createLeaderboard(users) {
     table += line;
 
     for (const user of users) {
-        const activityCount = user.activities?.length;
+        const activityCount = user.activities ? user.activities?.length : 0;
         table += '|' + ` ${user.username}`.padEnd(usernameColumnWidth) + '|' + ` ${activityCount}`.padEnd(activitiesColumnWidth) + '|\n';
     }
 
