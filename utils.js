@@ -6,6 +6,7 @@ function formatTime(seconds) {
 }
 
 function createLeaderboard(users) {
+    console.log("EBAAAAA");
     const longestUsernameLength = users.reduce((maxLength, user) => Math.max(maxLength, user.username.length), 0);
     const usernameColumnWidth = Math.max(longestUsernameLength, 'Username'.length) + 2;
     const activitiesColumnWidth = 'Activities'.length + 2;
@@ -17,7 +18,7 @@ function createLeaderboard(users) {
     table += line;
 
     for (const user of users) {
-        const activityCount = user.activities.length;
+        const activityCount = user.activities?.length;
         table += '|' + ` ${user.username}`.padEnd(usernameColumnWidth) + '|' + ` ${activityCount}`.padEnd(activitiesColumnWidth) + '|\n';
     }
 

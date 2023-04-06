@@ -22,36 +22,16 @@ bot.command('register', async (ctx) => {
     const userId = ctx.message.from.id;
     const username = ctx.message.from.username;
     const stateEncoded = encodeURIComponent(JSON.stringify({ userId, username}));
+    const isExistingUser = await checkIfUserExists(userId);
     const authUrl = `https://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(OAUTH_REDIRECT_URI)}&approval_prompt=force&scope=activity:read_all&state=${stateEncoded}`
-    const { data: users, error } = await supabase
-        .from('users')
-        .select('id')
-        .eq('userId', ctx.message.from.id);
-
-    if (error) {
-        console.log('Error checking for existing user:', error);
-        return;
-    }
-
-    if (users.length === 0) {
-        // Создайте нового пользователя
+    console.log(isExistingUser);
+    if (isExistingUser) {
+        await ctx.reply(`Привет ${username}! Вы уже зарегистрированы в системе.`);
+    } else {
         await ctx.reply(
             `Чтобы связать ваш аккаунт Strava с этим ботом, перейдите по следующей ссылке: ${authUrl}`
         );
-    } else if (users.length === 1) {
-        // Используйте существующего пользователя
-        await ctx.reply(`Привет ${username}! Вы уже зарегистрированы в системе.`);
-    } else {
-        await ctx.reply(`иб`);
     }
-
-    // if (isExistingUser) {
-    //     await ctx.reply(`Привет ${username}! Вы уже зарегистрированы в системе.`);
-    // } else {
-    //     await ctx.reply(
-    //         `Чтобы связать ваш аккаунт Strava с этим ботом, перейдите по следующей ссылке: ${authUrl}`
-    //     );
-    // }
 });
 
 bot.launch();

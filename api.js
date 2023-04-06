@@ -26,19 +26,26 @@ async function updateUser(user) {
 }
 
 
-async function checkIfUserExists(chatId) {
-    const { data: existingUser, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', chatId)
-        .single();
+async function checkIfUserExists(userId) {
+    try {
+        const { data: existingUser, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', userId)
+            .single();
 
-    if (error) {
-        console.log('Error checking for existing user:', error);
-        return;
+        console.log(error, existingUser);
+
+        if (error) {
+            console.log('Error checking for existing user:', error);
+            return null;
+        }
+
+        return existingUser;
+    } catch (error) {
+        console.error('Unexpected error while checking for existing user:', error);
+        return null;
     }
-
-    return existingUser;
 }
 
 async function updateActivities(user) {
