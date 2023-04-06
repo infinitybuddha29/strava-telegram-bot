@@ -3,10 +3,12 @@ const strava = require('strava-v3');
 const express = require('express');
 const fs = require('fs-extra');
 const { setIntervalAsync } = require('set-interval-async/dynamic');
+const { formatTime, createLeaderboard } = require('./utils');
+const { updateUser, updateAllUsersActivities, checkIfUserExists, supabase } = require('./api');
 
 require('dotenv').config();
 
-const TELEGRAM_API_TOKEN = process.env.TELEGRAM_API_TOKEN;
+const TELEGRAM_API_TOKEN = process.env.NODE_ENV === 'production' ? process.env.TELEGRAM_API_TOKEN : process.env.TELEGRAM_API_TOKEN_LOCAL;
 const STRAVA_CLIENT_ID = process.env.STRAVA_CLIENT_ID;
 const STRAVA_CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET;
 const OAUTH_REDIRECT_URI = process.env.NODE_ENV === 'production' ? process.env.PROD_OAUTH_REDIRECT_URI : process.env.LOCAL_OAUTH_REDIRECT_URI ;
@@ -14,81 +16,64 @@ const OAUTH_REDIRECT_URI = process.env.NODE_ENV === 'production' ? process.env.P
 const bot = new Telegraf(TELEGRAM_API_TOKEN);
 
 bot.start(async (ctx) => {
-    const chatId = ctx.message.chat.id;
-    const authUrl = `https://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(OAUTH_REDIRECT_URI)}&approval_prompt=force&scope=activity:read_all&state=${chatId}`
+    ctx.reply('Добро пожаловать! Чтобы зарегистрироваться, используйте команду /register.');
+});
 
-    await ctx.reply(
-        `Добро пожаловать! Чтобы связать ваш аккаунт Strava с этим ботом, перейдите по следующей ссылке: ${authUrl}`
-    );
+// Отправка ссылки для регистрации пользователя или в случае если такой пользователь уже зареган, отправка сообщения об этом.
+bot.command('register', async (ctx) => {
+    const userId = ctx.message.from.id;
+    const username = ctx.message.from.username;
+    const stateEncoded = encodeURIComponent(JSON.stringify({ userId, username}));
+    const authUrl = `https://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(OAUTH_REDIRECT_URI)}&approval_prompt=force&scope=activity:read_all&state=${stateEncoded}`
+    const isExistingUser = await checkIfUserExists(userId);
+
+    if (isExistingUser) {
+        await ctx.reply(`Привет ${username}! Вы уже зарегистрированы в системе.`);
+    } else {
+        await ctx.reply(
+            `Чтобы связать ваш аккаунт Strava с этим ботом, перейдите по следующей ссылке: ${authUrl}`
+        );
+    }
 });
 
 bot.launch();
 
 const app = express();
 
-const TOKENS_FILE = 'user_tokens.json';
-
-async function saveUserToken(chatId, accessToken) {
-    let tokens;
-    try {
-        tokens = await fs.readJson(TOKENS_FILE);
-    } catch (error) {
-        tokens = {};
-    }
-
-    tokens[chatId] = accessToken;
-    await fs.writeJson(TOKENS_FILE, tokens);
-}
-
+// Connect user tg and strava account
 app.get('/oauth/callback', async (req, res) => {
-    const chatId = req.query.state;
-    const code = req.query.code;
+    const { code, state } = req.query;
+    const { access_token: accessToken } = await strava.oauth.getToken(code, STRAVA_CLIENT_SECRET);
+    const stateDecoded = decodeURIComponent(state);
+    const { userId, username } = JSON.parse(stateDecoded);
 
-    if (chatId && code) {
-        try {
-            const response = await strava.oauth.getToken(code, STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET);
-            const accessToken = response.access_token;
-            console.log('saveUserToken', chatId, accessToken);
-            await saveUserToken(chatId, accessToken);
-            res.send('Успешно зарегистрирован');
-        } catch (error) {
-            res.send('Ошибка');
-        }
-    } else {
-        res.send('Ошибка');
-    }
+    await updateUser({ userId, username, accessToken} );
+    res.send('Вы успешно зарегистрировались! Теперь вы можете вернуться в чат.')
 });
 
+bot.command('leaderboard', async (ctx) => {
+    //await updateAllUsersActivities();
+    const { data: users, error } = await supabase
+        .from('users')
+        .select('username, activities');
 
-async function checkActivities() {
-    let userTokens;
-    try {
-        userTokens = await fs.readJson(TOKENS_FILE);
-    } catch (error) {
-        userTokens = {};
+    if (error) {
+        console.log('Error fetching users:', error);
+        return;
     }
 
-    for (const [chatId, accessToken] of Object.entries(userTokens)) {
-        try {
-            const activities = await strava.athlete.listActivities({
-                access_token: accessToken,
-                per_page: 5,
-            });
+    const leaderboard = createLeaderboard(users);
+    ctx.reply('Активность пользователей за последние 7 дней.')
+    ctx.reply(`\`\`\`\n${leaderboard}\n\`\`\``, { parse_mode: 'MarkdownV2' });
+});
 
-            for (const activity of activities) {
-                bot.telegram.sendMessage(
-                    chatId,
-                    `${activity.name}: ${activity.distance} метров, время ${activity.elapsed_time}`
-                );
-            }
-        } catch (error) {
-            console.log('Error fetching activities:', error);
-        }
-    }
-}
+bot.command('updateLeaderboard', async (ctx) => {
+    await updateAllUsersActivities();
+    const lastUpdateTime = new Date();
+    const formattedLastUpdateDate = `${lastUpdateTime.getDate()}.${lastUpdateTime.getMonth() + 1} в ${lastUpdateTime.getHours()}:${lastUpdateTime.getMinutes()}`;
+    ctx.reply(`Последнее обновление данных ${formattedLastUpdateDate}`)
+})
 
-const CHECK_INTERVAL = 60 * 60 * 1000; // Check every hour
-setIntervalAsync(checkActivities, CHECK_INTERVAL);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
