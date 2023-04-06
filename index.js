@@ -1,8 +1,9 @@
 const { Telegraf } = require('telegraf');
 const strava = require('strava-v3');
 const express = require('express');
-const { updateUser, updateAllUsersActivities, checkIfUserExists, supabase } = require('./api');
+const { updateUser, updateAllUsersActivities, checkIfUserExists, refreshAccessTokenForAllUsers, supabase } = require('./api');
 const { createLeaderboard } = require('./utils.js');
+const { setIntervalAsync } = require('set-interval-async/dynamic');
 
 require('dotenv').config();
 
@@ -25,7 +26,6 @@ bot.command('register', async (ctx) => {
     const stateEncoded = encodeURIComponent(JSON.stringify({ userId, username}));
     const isExistingUser = await checkIfUserExists(userId);
     const authUrl = `https://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(OAUTH_REDIRECT_URI)}&approval_prompt=force&scope=activity:read_all&state=${stateEncoded}`
-    console.log(isExistingUser);
     if (isExistingUser) {
         await ctx.reply(`Привет ${username}! Вы уже зарегистрированы в системе.`);
     } else {
@@ -42,15 +42,17 @@ const app = express();
 // Connect user tg and strava account
 app.get('/oauth/callback', async (req, res) => {
     const { code, state } = req.query;
-    const { access_token: accessToken } = await strava.oauth.getToken(code, STRAVA_CLIENT_SECRET);
+    const { access_token: accessToken, refresh_token: refreshToken } = await strava.oauth.getToken(code, STRAVA_CLIENT_SECRET);
     const stateDecoded = decodeURIComponent(state);
     const { userId, username } = JSON.parse(stateDecoded);
 
-    await updateUser({ userId, username, accessToken} );
+    await updateUser({ userId, username, accessToken, refreshToken } );
+
     res.send('Вы успешно зарегистрировались! Теперь вы можете вернуться в чат.')
 });
 
 bot.command('leaderboard', async (ctx) => {
+    ctx.reply('Тяги бархатные какие...')
     await updateAllUsersActivities();
     const { data: users, error } = await supabase
         .from('users')
@@ -62,7 +64,7 @@ bot.command('leaderboard', async (ctx) => {
     }
 
     const leaderboard = createLeaderboard(users);
-    ctx.reply('Активность пользователей за последние 7 дней.')
+    ctx.reply('Активность войнов AnnenkiStreet за последние 7 дней.')
     ctx.reply(`\`\`\`\n${leaderboard}\n\`\`\``, { parse_mode: 'MarkdownV2' });
 });
 
@@ -72,6 +74,9 @@ bot.command('updateLeaderboard', async (ctx) => {
     const formattedLastUpdateDate = `${lastUpdateTime.getDate()}.${lastUpdateTime.getMonth() + 1} в ${lastUpdateTime.getHours()}:${lastUpdateTime.getMinutes()}`;
     ctx.reply(`Последнее обновление данных ${formattedLastUpdateDate}`)
 })
+
+const REFRESH_TOKEN_INTERVAL = 60 * 60 * 1000 * 2; // 2 hours
+setIntervalAsync(refreshAccessTokenForAllUsers, REFRESH_TOKEN_INTERVAL);
 
 
 const PORT = process.env.PORT || 3000;
