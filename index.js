@@ -50,28 +50,28 @@ app.get('/oauth/callback', async (req, res) => {
     res.send('Вы успешно зарегистрировались! Теперь вы можете вернуться в чат.')
 });
 
-bot.command('leaderboard', async (ctx) => {
-    await updateAllUsersActivities();
-    const { data: users, error } = await supabase
-        .from('users')
-        .select('username, activities');
-
-    if (error) {
-        console.log('Error fetching users:', error);
-        return;
-    }
-
-    //const leaderboard = createLeaderboard(users);
-    ctx.reply('Активность пользователей за последние 7 дней.')
-    //ctx.reply(`\`\`\`\n${leaderboard}\n\`\`\``, { parse_mode: 'MarkdownV2' });
-});
-
-bot.command('updateLeaderboard', async (ctx) => {
-    await updateAllUsersActivities();
-    const lastUpdateTime = new Date();
-    const formattedLastUpdateDate = `${lastUpdateTime.getDate()}.${lastUpdateTime.getMonth() + 1} в ${lastUpdateTime.getHours()}:${lastUpdateTime.getMinutes()}`;
-    ctx.reply(`Последнее обновление данных ${formattedLastUpdateDate}`)
-})
+// bot.command('leaderboard', async (ctx) => {
+//     await updateAllUsersActivities();
+//     const { data: users, error } = await supabase
+//         .from('users')
+//         .select('username, activities');
+//
+//     if (error) {
+//         console.log('Error fetching users:', error);
+//         return;
+//     }
+//
+//     //const leaderboard = createLeaderboard(users);
+//     ctx.reply('Активность пользователей за последние 7 дней.')
+//     //ctx.reply(`\`\`\`\n${leaderboard}\n\`\`\``, { parse_mode: 'MarkdownV2' });
+// });
+//
+// bot.command('updateLeaderboard', async (ctx) => {
+//     await updateAllUsersActivities();
+//     const lastUpdateTime = new Date();
+//     const formattedLastUpdateDate = `${lastUpdateTime.getDate()}.${lastUpdateTime.getMonth() + 1} в ${lastUpdateTime.getHours()}:${lastUpdateTime.getMinutes()}`;
+//     ctx.reply(`Последнее обновление данных ${formattedLastUpdateDate}`)
+// })
 
 
 const PORT = process.env.PORT || 3000;
