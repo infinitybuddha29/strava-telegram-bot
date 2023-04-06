@@ -61,9 +61,9 @@ bot.command('leaderboard', async (ctx) => {
         return;
     }
 
-    const leaderboard = createLeaderboard(users);
+    //const leaderboard = createLeaderboard(users);
     ctx.reply('Активность пользователей за последние 7 дней.')
-    ctx.reply(`\`\`\`\n${leaderboard}\n\`\`\``, { parse_mode: 'MarkdownV2' });
+    //ctx.reply(`\`\`\`\n${leaderboard}\n\`\`\``, { parse_mode: 'MarkdownV2' });
 });
 
 bot.command('updateLeaderboard', async (ctx) => {

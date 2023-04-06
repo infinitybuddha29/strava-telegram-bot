@@ -6,7 +6,6 @@ function formatTime(seconds) {
 }
 
 function createLeaderboard(users) {
-    console.log("EBAAAAA");
     const longestUsernameLength = users.reduce((maxLength, user) => Math.max(maxLength, user.username.length), 0);
     const usernameColumnWidth = Math.max(longestUsernameLength, 'Username'.length) + 2;
     const activitiesColumnWidth = 'Activities'.length + 2;
