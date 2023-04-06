@@ -52,7 +52,7 @@ app.get('/oauth/callback', async (req, res) => {
 });
 
 bot.command('leaderboard', async (ctx) => {
-    //await updateAllUsersActivities();
+    await updateAllUsersActivities();
     const { data: users, error } = await supabase
         .from('users')
         .select('username, activities');
