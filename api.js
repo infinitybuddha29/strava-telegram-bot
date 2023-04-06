@@ -32,7 +32,6 @@ async function checkIfUserExists(chatId) {
         .select('*')
         .eq('id', chatId)
         .single();
-    console.log(existingUser);
 
     if (error) {
         console.log('Error checking for existing user:', error);

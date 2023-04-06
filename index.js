@@ -1,9 +1,7 @@
 const { Telegraf } = require('telegraf');
 const strava = require('strava-v3');
 const express = require('express');
-const fs = require('fs-extra');
-const { setIntervalAsync } = require('set-interval-async/dynamic');
-const { formatTime, createLeaderboard } = require('./utils');
+const { createLeaderboard } = require('./utils');
 const { updateUser, updateAllUsersActivities, checkIfUserExists, supabase } = require('./api');
 
 require('dotenv').config();
@@ -25,15 +23,35 @@ bot.command('register', async (ctx) => {
     const username = ctx.message.from.username;
     const stateEncoded = encodeURIComponent(JSON.stringify({ userId, username}));
     const authUrl = `https://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(OAUTH_REDIRECT_URI)}&approval_prompt=force&scope=activity:read_all&state=${stateEncoded}`
-    const isExistingUser = await checkIfUserExists(userId);
+    const { data: users, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('userId', ctx.message.from.id);
 
-    if (isExistingUser) {
-        await ctx.reply(`Привет ${username}! Вы уже зарегистрированы в системе.`);
-    } else {
+    if (error) {
+        console.log('Error checking for existing user:', error);
+        return;
+    }
+
+    if (users.length === 0) {
+        // Создайте нового пользователя
         await ctx.reply(
             `Чтобы связать ваш аккаунт Strava с этим ботом, перейдите по следующей ссылке: ${authUrl}`
         );
+    } else if (users.length === 1) {
+        // Используйте существующего пользователя
+        await ctx.reply(`Привет ${username}! Вы уже зарегистрированы в системе.`);
+    } else {
+        await ctx.reply(`иб`);
     }
+
+    // if (isExistingUser) {
+    //     await ctx.reply(`Привет ${username}! Вы уже зарегистрированы в системе.`);
+    // } else {
+    //     await ctx.reply(
+    //         `Чтобы связать ваш аккаунт Strava с этим ботом, перейдите по следующей ссылке: ${authUrl}`
+    //     );
+    // }
 });
 
 bot.launch();
