@@ -1,7 +1,7 @@
 const { Telegraf } = require('telegraf');
 const strava = require('strava-v3');
 const express = require('express');
-const { createLeaderboard } = require('./utils');
+//const { createLeaderboard } = require('./utils');
 const { updateUser, updateAllUsersActivities, checkIfUserExists, supabase } = require('./api');
 
 require('dotenv').config();
