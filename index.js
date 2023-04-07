@@ -53,6 +53,8 @@ app.get('/oauth/callback', async (req, res) => {
 
 bot.command('leaderboard', async (ctx) => {
     ctx.reply('Тяги бархатные какие...')
+    await refreshAccessTokenForAllUsers();
+    ctx.reply('Токены посвежели...')
     await updateAllUsersActivities();
     const { data: users, error } = await supabase
         .from('users')
@@ -69,6 +71,7 @@ bot.command('leaderboard', async (ctx) => {
 });
 
 bot.command('updateLeaderboard', async (ctx) => {
+    await refreshAccessTokenForAllUsers();
     await updateAllUsersActivities();
     const lastUpdateTime = new Date();
     const formattedLastUpdateDate = `${lastUpdateTime.getDate()}.${lastUpdateTime.getMonth() + 1} в ${lastUpdateTime.getHours()}:${lastUpdateTime.getMinutes()}`;

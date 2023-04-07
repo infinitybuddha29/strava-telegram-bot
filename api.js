@@ -11,7 +11,7 @@ async function refreshAccessToken(user) {
         const response = await strava.oauth.refreshToken(user.stravaRefreshToken);
         const newAccessToken = response.access_token;
         const newRefreshToken = response.refresh_token;
-        await updateUser({userId: user.userId, stravaToken: newAccessToken, stravaRefreshToken: newRefreshToken});
+        await updateUser({userId: user.userId, accessToken: newAccessToken, refreshToken: newRefreshToken});
     } catch (error) {
         console.log('Error refreshing access token:', error);
         return null;
@@ -93,6 +93,7 @@ async function updateActivities(user) {
         after: Math.floor(lastActivityDate / 1000),
         per_page: 25
     })
+    console.log('acc5', activities);
 
     const newActivities = activities?.map(activity => ({
         activity_id: activity.id,
@@ -131,6 +132,7 @@ async function updateAllUsersActivities() {
     }
 
     for (const user of users) {
+        console.log('users2',users);
         await updateActivities(user);
     }
 }
